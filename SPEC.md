@@ -78,8 +78,7 @@ export ANTHROPIC_API_KEY="..."   # if Claude is teacher
 export DEEPSEEK_API_KEY="..."    # if DeepSeek-R1 is teacher
 export WANDB_API_KEY="..."
 
-export WORKSPACE="/workspace/phase1"
-mkdir -p $WORKSPACE
+export WORKSPACE="$(git rev-parse --show-toplevel)"   # = the tau-bench-phase1 repo root
 cd $WORKSPACE
 ```
 
@@ -125,10 +124,10 @@ pip install --upgrade pip wheel setuptools
 pip install "vllm>=0.19" openai anthropic transformers accelerate datasets pandas numpy rich wandb
 ```
 
-1.2. Clone and install τ³-bench with the gym extra (this is the new requirement vs Phase 0):
+1.2. Install τ³-bench with the gym extra (this is the new requirement vs Phase 0). The clone lives as a sibling at `/home/jovyan/tau2-bench` (do not nest under `$WORKSPACE`):
 ```bash
-cd $WORKSPACE
-git clone https://github.com/sierra-research/tau2-bench.git
+cd /home/jovyan
+[ -d tau2-bench ] || git clone https://github.com/sierra-research/tau2-bench.git
 cd tau2-bench
 uv sync --extra gym   # the gym extra is what enables programmatic rollout; required for SFT data gen
 ```
@@ -139,11 +138,17 @@ pip install llamafactory  # or follow upstream install if pip wheel is stale
 # Alternatives: pip install trl axolotl
 ```
 
-1.4. Verify gym interface importable:
+1.4. Verify gym interface importable (run from the tau2-bench dir so its uv venv is used). The actual API is `gymnasium.make(TAU_BENCH_ENV_ID, ...)` after `register_gym_agent()` — NOT `make_env()` as earlier drafts of this spec assumed:
 ```bash
-python -c "from tau2.gym import make_env; print('gym OK')"
+cd /home/jovyan/tau2-bench
+uv run python -c "
+import gymnasium as gym
+from tau2.gym import register_gym_agent, AgentGymEnv, TAU_BENCH_ENV_ID, TAU_BENCH_USER_ENV_ID
+register_gym_agent()
+print('gym OK; env id:', TAU_BENCH_ENV_ID)
+"
 ```
-If the import path is different at the time of execution, search for it: `grep -r "class.*Env" $WORKSPACE/tau2-bench/src/tau2/gym/ | head` and update Task 5 commands to match.
+Verified 2026-05-10: env IDs are `tau-bench-v0` (agent side) and `tau-bench-user-v0` (user side). `step()` returns the standard gymnasium 5-tuple `(obs, reward, terminated, truncated, info)`; `info` contains `tools`, `policy`, `simulation_run`. Available domains include the standard 5 (mock, airline, retail, telecom, banking_knowledge) plus telecom variants (telecom_full, telecom_small, telecom-workflow). See `/home/jovyan/tau2-bench/src/tau2/gym/README.md`.
 
 **Acceptance:** All imports succeed; gym smoke import returns no error.
 
@@ -221,12 +226,13 @@ Acceptance: structured tool call returned; thinking-mode toggle works.
 **Goal:** Verify we can drive the τ³-bench environment programmatically (not via the `tau2 run` CLI). This is the substrate for both SFT data gen and Phase 3 RL rollouts.
 
 4.1. Write a 30-line script that:
-- Calls `tau2.gym.make_env("telecom")` (or whatever the actual API is — check at execution time).
-- Runs one rollout with a hard-coded sequence of 3 dummy actions.
-- Asserts that `step()` returns `(obs, reward, done, info)` in some form.
+- Calls `register_gym_agent()` then `gym.make(TAU_BENCH_ENV_ID, domain="telecom", task_id=<some_task>)`.
+- Runs one rollout with a hard-coded sequence of 3 dummy actions (use functional format, e.g. `"get_user_details(user_id='customer_123')"`).
+- Asserts that `step()` returns the gymnasium 5-tuple `(obs, reward, terminated, truncated, info)`.
 - Prints the final `info` dict so we can see what state-checking signals are available.
+- For an offline-only test (no user-sim API key needed), use `solo_mode=True`.
 
-4.2. The output `info` dict should include the per-step verifiable signals we need for Phase 3 reward shaping (DB-state delta, communication-info checks, tool-call validity). Document what's actually exposed in `phase1_results.md` § "Gym signals available".
+4.2. The output `info` dict is documented to contain `tools`, `policy`, and `simulation_run`. We need to confirm `simulation_run` includes the per-step verifiable signals for Phase 3 reward shaping (DB-state delta, communication-info checks, tool-call validity). Document what's actually exposed in `phase1_results.md` § "Gym signals available".
 
 **Acceptance:** Smoke script runs to completion; `info` dict structure recorded.
 

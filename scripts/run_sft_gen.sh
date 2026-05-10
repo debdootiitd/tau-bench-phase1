@@ -24,8 +24,15 @@
 #   1. Resolve teacher SDK + auth from env.
 #   2. Compute per-domain quotas from DOMAIN_SPLIT × TARGET_TRAJECTORIES.
 #   3. For each domain: spawn CONCURRENCY workers, each calls
-#      `from tau2.gym import make_env; env = make_env(domain); ...` and runs
-#      teacher policy → step → log. Persona sampled per-rollout per PERSONA_MIX.
+#        import gymnasium as gym
+#        from tau2.gym import register_gym_agent, TAU_BENCH_ENV_ID
+#        register_gym_agent()  # once per process
+#        env = gym.make(TAU_BENCH_ENV_ID, domain=<domain>, task_id=<task>,
+#                       user_llm="gpt-4.1", user_llm_args={"temperature": 0.7})
+#      and runs teacher policy → step → log. step() returns the gymnasium
+#      5-tuple (obs, reward, terminated, truncated, info). Persona is sampled
+#      per-rollout per PERSONA_MIX (encoded into task_id, e.g.
+#      "[mobile_data_issue]...[PERSONA:Hard]" — see tau2-bench/src/tau2/gym/README.md).
 #   4. Each worker writes one JSONL line per completed trajectory (full message
 #      history, tool calls, final info dict).
 #   5. After first 1K trajectories: pause and request human review (SPEC § 7

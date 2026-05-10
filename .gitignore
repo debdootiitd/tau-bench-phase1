@@ -6,9 +6,13 @@ __pycache__/
 venv/
 node_modules/
 
-# Local trajectory caches and SFT data should not be committed
+# Local trajectory caches, models, and SFT outputs should not be committed
 data/
+sft_data/
+models/
 checkpoints/
+base_eval/
+sft_eval/
 runs/
 wandb/
 *.jsonl
