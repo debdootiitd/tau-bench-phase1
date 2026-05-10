@@ -14,4 +14,16 @@ Chronological record of decisions, deviations from `SPEC.md`, and incidents duri
   - Trajectory volume (default 30K, telecom-heavy 60/25/15).
 - No code or model downloads yet. Scripts in `scripts/` are stubs with documented contracts — see each file header.
 
+---
+
+## 2026-05-10 — § 3 decisions confirmed
+
+All three open SPEC § 3 decisions locked in:
+
+- **Base model:** run the Task 2 bake-off across Qwen3-32B, GLM-4.5-Air, Qwen3-8B. Fallback if interrupted: Qwen3-8B (cheapest Phase 3 RL rollouts; MUA-RL precedent). Switch to Qwen3-32B only if Qwen3-8B trails airline pass@1 by >5 pp.
+- **Teacher:** Claude Opus. Budget $2–6K for 30K trajectories. GPT-5 contingency for rate limits, DeepSeek-R1 contingency for budget overruns.
+- **Trajectory volume:** 30K target / 20K floor / 50K cap (only if mid-run yield <50%). Domain split 60% telecom / 25% retail / 15% airline.
+
+SPEC § 3 updated to reflect confirmation. Ready for Task 1 (env setup) once the compute box is provisioned.
+
 <!-- Append future entries below. Format: ## YYYY-MM-DD — short title -->

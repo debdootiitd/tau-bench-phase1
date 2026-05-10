@@ -83,13 +83,13 @@ mkdir -p $WORKSPACE
 cd $WORKSPACE
 ```
 
-### Decisions to confirm with Debdoot before execution
+### Decisions confirmed with Debdoot (2026-05-10)
 
-These three choices have order-of-magnitude cost/effort consequences. Confirm before Task 2 starts.
+These three choices have order-of-magnitude cost/effort consequences. All confirmed before Task 2 start.
 
-1. **Base model**: default plan is to bake off all three (Qwen3-32B, GLM-4.5-Air, Qwen3-8B) on Phase 0 harness and pick the winner. If compute is tight and we need to skip the bake-off, default to **Qwen3-32B** (public RL recipes, native thinking, strong tool-use prior). Qwen3-8B is the fast-and-aggressive backup if budget is the binding constraint — MUA-RL and others have shown 8B + aggressive RL beats SFT-only larger models.
-2. **Teacher model for SFT**: default is **Claude Opus** (best reasoning quality at telecom-style multi-turn). GPT-5 if Anthropic rate limits become binding; DeepSeek-R1 if budget cap is the constraint and we accept slightly weaker trajectories.
-3. **SFT trajectory volume**: target 30K (midpoint of 20–50K). Telecom-heavy split: 60% telecom / 25% retail / 15% airline (telecom is the hardest and most coupled domain). Adjust if base-model bake-off shows stronger headroom on a specific domain.
+1. **Base model — CONFIRMED: run the bake-off.** Evaluate Qwen3-32B, GLM-4.5-Air, and Qwen3-8B per Task 2 (~30 GPU-h, pass@1 only on 25-task subset). Pick the winner per § Task 2 decision rule. Fallback default if bake-off is interrupted: **Qwen3-8B** (cheapest Phase 3 RL rollouts; MUA-RL precedent). Qwen3-32B is the safer fallback if Qwen3-8B's airline pass@1 trails by >5 pp.
+2. **Teacher model for SFT — CONFIRMED: Claude Opus.** Best reasoning quality at telecom-style multi-turn. Budget envelope $2–6K for 30K trajectories. Contingencies: GPT-5 if Anthropic Tier-4 rate limits bind during rollouts; DeepSeek-R1 if budget overruns force a switch (accept lower verification yield).
+3. **SFT trajectory volume — CONFIRMED: 30K target, 20K floor.** Telecom-heavy split: 60% telecom / 25% retail / 15% airline. Generate 30K raw; accept the SFT run at Task 6 if dual-verification yield reaches 20K usable. Generate up to 50K only if mid-run yield gate (Task 6.3) shows <50% pass rate.
 
 ---
 
